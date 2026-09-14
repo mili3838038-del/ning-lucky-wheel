@@ -18,15 +18,19 @@ exports.handler = async function(event, context) {
         const hash = crypto.createHash('md5').update(uniqueKey).digest('hex');
         const rand = parseInt(hash.substring(0, 8), 16) / 0xffffffff;
 
-        // 4. 計算機率 (今日內不管抽幾次，prizeIndex 都會一樣)
-        let prizeIndex = 0;
-        let prizeName = "8元";
+        // 4. 計算機率 (8個獎項，精確累加分配)
+let prizeIndex = 0;
+let prizeName = "8元";
 
-        if (rand < 0.001) { prizeIndex = 4; prizeName = "388元"; }
-        else if (rand < 0.01) { prizeIndex = 3; prizeName = "188元"; }
-        else if (rand < 0.05) { prizeIndex = 2; prizeName = "88元"; }
-        else if (rand < 0.20) { prizeIndex = 1; prizeName = "38元"; }
-        else { prizeIndex = 0; prizeName = "8元"; }
+// 機率由極小到大排列，確保數學邏輯絕對正確
+if (rand < 0.000001) { prizeIndex = 7; prizeName = "iphone 18 duo 512G"; } // 0.0001%
+else if (rand < 0.000002) { prizeIndex = 6; prizeName = "AirPods 5"; } // 0.0001%
+else if (rand < 0.000003) { prizeIndex = 5; prizeName = "8888元"; } // 0.0001%
+else if (rand < 0.000004) { prizeIndex = 4; prizeName = "888元"; } // 0.0001%
+else if (rand < 0.010004) { prizeIndex = 3; prizeName = "188元"; } // 1%
+else if (rand < 0.060004) { prizeIndex = 2; prizeName = "88元"; } // 5%
+else if (rand < 0.210004) { prizeIndex = 1; prizeName = "38元"; } // 15%
+else { prizeIndex = 0; prizeName = "8元"; } // 最高機率 (約 78.9996%)
 
         // 5. 組合網址並背景紀錄至 Google 試算表
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUd3pEdG9Ljxt3L12NjI0cmid1hiLUDXaKRRSeksQdojX_WiArW04yJ6e7M6CKttSgCA/exec";
