@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>米恩 专属系列活动</title>
+    <!-- 引入 Tailwind CSS 进行快速排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 设定自订字体与动画 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 核心修复：确保触控装置上的滑动带有原生惯性，且隐藏丑陋的滚动条但保留功能 */
+        .custom-scroll {
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: thin;
+            scrollbar-color: #475569 transparent;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* 隐藏横向菜单的滚动条，让它看起来更像 APP 标签列 */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen h-[100dvh] w-full flex flex-col md:flex-row overflow-hidden">
+
+    <!-- 左侧导航列 -->
+    <aside class="w-full md:w-80 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex-shrink-0 flex flex-col z-20 shadow-lg md:shadow-none">
+        <!-- 标题区块 -->
+        <div class="p-4 md:p-6 border-b border-slate-800 bg-slate-900 flex items-center gap-3 flex-shrink-0">
+            <i class="fa-solid fa-crown text-amber-400 text-2xl md:text-3xl"></i>
+            <h1 class="text-lg md:text-xl font-bold text-white tracking-wider leading-tight">
+                米恩<br/>
+                <span class="text-amber-400 text-xs md:text-sm">专属系列活动</span>
+            </h1>
+        </div>
+        
+        <!-- 菜单列表 -->
+        <div id="nav-container" class="custom-scroll hide-scroll overflow-x-auto md:overflow-y-auto flex flex-row md:flex-col gap-2 p-3 md:p-4 flex-shrink-0 md:flex-1 items-center md:items-stretch">
+            <!-- JavaScript 会在这里动态生成按钮 -->
+        </div>
+    </aside>
+
+    <!-- 右侧内容区块 -->
+    <main class="flex-1 overflow-y-auto p-5 md:p-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black relative w-full custom-scroll" id="main-content">
+        <!-- JavaScript 会在这里动态生成内容 -->
+    </main>
+
+    <!-- 数据与互动逻辑 -->
+    <script>
+        // 全局抽奖核心 - 连线伺服器版
+        window.startWheel = async function() {
+            const username = document.getElementById('wheel-username').value.trim();
+            const code = document.getElementById('wheel-code').value.trim();
+            const btn = document.getElementById('wheel-btn');
+            const wheel = document.getElementById('wheel-body');
+
+            if(!username || !code) {
+                alert('请输入游戏账号与今日专属抽奖码！');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在验证并抽取...';
+
+            try {
+                // 向 Netlify 中继站发送请求
+                const res = await fetch('/.netlify/functions/draw', {
+                    method: 'POST',
+                    body: JSON.stringify({ username: username, code: code })
+                });
+                
+                const data = await res.json();
+                
+                if (!data.success) throw new Error("API Error");
+
+                // 获取伺服器算出的奖项
+                let prizeIndex = data.prizeIndex;
+                let prizeName = data.prizeName;
+
+                // 视觉偏移 (纯动画效果，不影响奖项)
+                let jitter = (Math.random() - 0.5) * 50; 
+                let centerAngles = [36, 108, 180, 252, 324];
+                let targetAngle = 360 - centerAngles[prizeIndex];
+                let finalRotation = 3600 + targetAngle + jitter;
+
+                // 动画执行
+                wheel.style.transition = 'none';
+                wheel.style.transform = 'rotate(0deg)';
+                void wheel.offsetWidth;
+
+                wheel.style.transition = 'transform 4.5s cubic-bezier(0.15, 0.8, 0.1, 1)';
+                wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+                // 弹窗提示
+                setTimeout(() => {
+                    alert(`🎉 恭喜！\n\n游戏账号：【 ${username} 】\n\n抽中幸运彩金：【 ${prizeName} 】！\n\n数据已自动同步至代理后台，请截图发送给代理领取。`);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> 立即抽取彩金';
+                }, 4600);
+
+            } catch (error) {
+                alert("网路连线异常或代码错误，请稍后再试！");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> 立即抽取彩金';
+            }
+        };
+
+        const activitiesData = [ 
+            {
+                id: 'lucky-wheel',
+                icon: 'fa-dharmachakra',
+                title: '每日幸运大转盘',
+                time: '中秋国庆特别活动',
+                description: '每日存款金额 ≥ 500 且当日流水 ≥ 1000 的老会员，私聊代理获取专属抽奖码，即可参与转盘抽大奖！',
+                tables: [],
+                rules: [
+                    '每日存款金额 ≥ 500 且当日流水 ≥ 1000 的会员可获得1次抽奖资格。',
+                    '满足条件后，请向代理索取“今日专属抽奖码”。',
+                    '奖项包含：8元(80%)、38元(15%)、88元(4%)、188元(0.9%)、最高388元(0.1%)。',
+                    '【防作弊声明】抽奖结果由系统加密生成唯一锁定结果，并即时同步至代理后台，请勿伪造截图。',
+                    '中奖后请立即截图完整画面并发送给代理申请派发彩金。'
+                ],
+                customHtml: `
+                    <div class="bg-slate-900/80 border border-slate-800 p-6 md:p-10 rounded-2xl shadow-xl mt-6 relative overflow-hidden flex flex-col lg:flex-row items-center justify-center gap-10">
+                        <!-- 抽奖转盘 -->
+                        <div class="relative w-[280px] h-[280px] md:w-[320px] md:h-[320px] flex-shrink-0 mt-4 lg:mt-0">
+                            <!-- 指针 -->
+                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-10 z-20 drop-shadow-xl" style="clip-path: polygon(50% 100%, 0 0, 100% 0); background-color: #f59e0b;"></div>
+                            
+                            <!-- 转盘本体 -->
+                            <div id="wheel-body" class="w-full h-full rounded-full border-[6px] border-slate-700 shadow-[0_0_25px_rgba(0,0,0,0.5)] overflow-hidden relative transition-transform" 
+                                 style="background: conic-gradient(#ef4444 0 72deg, #f59e0b 72deg 144deg, #dc2626 144deg 216deg, #ea580c 216deg 288deg, #b91c1c 288deg 360deg);">
+                                
+                                <!-- 奖项文字 -->
+                                <div class="absolute inset-0 origin-center" style="transform: rotate(36deg);">
+                                    <div class="absolute top-[10%] left-1/2 -translate-x-1/2 text-white font-black text-xl md:text-2xl" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">8元</div>
+                                </div>
+                                <div class="absolute inset-0 origin-center" style="transform: rotate(108deg);">
+                                    <div class="absolute top-[10%] left-1/2 -translate-x-1/2 text-white font-black text-xl md:text-2xl" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">38元</div>
+                                </div>
+                                <div class="absolute inset-0 origin-center" style="transform: rotate(180deg);">
+                                    <div class="absolute top-[10%] left-1/2 -translate-x-1/2 text-white font-black text-xl md:text-2xl" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">88元</div>
+                                </div>
+                                <div class="absolute inset-0 origin-center" style="transform: rotate(252deg);">
+                                    <div class="absolute top-[10%] left-1/2 -translate-x-1/2 text-white font-black text-xl md:text-2xl" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">188元</div>
+                                </div>
+                                <div class="absolute inset-0 origin-center" style="transform: rotate(324deg);">
+                                    <div class="absolute top-[10%] left-1/2 -translate-x-1/2 text-white font-black text-xl md:text-2xl" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">388元</div>
+                                </div>
+                            </div>
+
+                            <!-- 中心圆轴 -->
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-slate-800 rounded-full border-[4px] border-slate-600 z-10 flex items-center justify-center shadow-inner">
+                                <div class="w-4 h-4 bg-amber-500 rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <!-- 资料输入区 -->
+                        <div class="w-full max-w-sm bg-slate-800/60 p-6 rounded-xl border border-slate-700 shadow-inner">
+                            <h4 class="text-white font-bold text-lg mb-4 border-b border-slate-600 pb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-gift text-amber-400"></i> 输入信息开始抽奖
+                            </h4>
+                            <div class="mb-4">
+                                <label class="block text-slate-400 text-xs mb-1 ml-1">游戏账号</label>
+                                <input type="text" id="wheel-username" placeholder="请输入您的账号..." class="w-full px-4 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium focus:outline-none focus:border-amber-500 transition-colors">
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-slate-400 text-xs mb-1 ml-1">今日专属抽奖码 (向代理索取)</label>
+                                <input type="text" id="wheel-code" placeholder="例如：VIP888" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium focus:outline-none focus:border-amber-500 transition-colors">
+                            </div>
+                            <button onclick="window.startWheel()" id="wheel-btn" class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-lg rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-bolt"></i> 立即抽取彩金
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'first-deposit-regular',
+                icon: 'fa-coins',
+                title: '各平台常规首存彩金',
+                time: '长期有效',
+                description: '各平台常规首存彩金一览表，各大平台福利一次看懂。',
+                tables: [
+                    {
+                        title: '<i class="fa-solid fa-star mr-2 text-blue-400"></i>星空 / OD',
+                        headers: ['首存金额', '彩金'],
+                        rows: [['500', '50'], ['1000', '100'], ['5000', '300'], ['10000', '500'], ['30000', '1200'], ['50000', '2000'], ['100000', '4500'], ['200000', '9000']]
+                    },
+                    {
+                        title: '<i class="fa-solid fa-o mr-2 text-orange-400"></i>OP7',
+                        headers: ['首存金额', '彩金'],
+                        rows: [['500', '88'], ['1000', '158'], ['2000', '328'], ['5000', '588'], ['10000', '888'], ['30000', '1588']]
+                    },
+                    {
+                        title: '<i class="fa-solid fa-chess-knight mr-2 text-purple-400"></i>新葡京',
+                        headers: ['首存金额', '彩金'],
+                        rows: [['588', '88'], ['1000', '188'], ['3000', '328'], ['5000', '588'], ['10000', '1088'], ['30000', '1588'], ['50000', '2088'], ['100000', '2888']]
+                    },
+                    {
+                        title: '<i class="fa-solid fa-fire mr-2 text-red-400"></i>凤凰',
+                        headers: ['首存金额', '彩金'],
+                        rows: [['588', '68'], ['1000', '128'], ['5000', '388'], ['10000', '888'], ['50000', '1288'], ['100000', '1688'], ['150000', '1888']]
+                    }
+                ],
+                rules: [
+                    '彩金流水请依各平台相关规定为准。',
+                    '同一手机号、姓名、银行卡、邮箱仅可参加一次。'
+                ]
+            },
+            {
+                id: 'reload-deposit-regular',
+                icon: 'fa-piggy-bank',
+                title: '各平台常规复存彩金',
+                time: '长期有效',
+                description: '各平台常规复存彩金，请注意各个平台的计算周期！',
+                tables: [
+                    {
+                        title: '<i class="fa-solid fa-star mr-2 text-blue-400"></i>星空 / OD (周期: 1-7、8-15、16-22、23-31)',
+                        headers: ['复存金额', '彩金'],
+                        rows: [['500', '30'], ['1000', '50'], ['5000', '150'], ['10000', '200'], ['30000', '500'], ['50000', '900'], ['100000', '1900'], ['300000', '4000']]
+                    },
+                    {
+                        title: '<i class="fa-solid fa-o mr-2 text-orange-400"></i>OP7 (每周一至日)',
+                        headers: ['复存金额', '彩金'],
+                        rows: [['500', '38'], ['1000', '58'], ['2000', '88'], ['5000', '188'], ['10000', '268'], ['30000', '518'], ['50000', '788'], ['100000', '988'], ['200000', '1888']]
+                    },
+                    {
+                        title: '<i class="fa-solid fa-chess-knight mr-2 text-purple-400"></i>新葡京 (每周一至日)',
+                        headers: ['复存金额', '彩金'],
+                        rows: [['500', '58'], ['1000', '88'], ['3000', '188'], ['5000', '388'], ['10000', '588'], ['30000', '1288'], ['50000', '1588'], ['100000', '1888'], ['200000', '2888']]
+                    },
+                    {
+                        title: '<i class="fa-solid fa-fire mr-2 text-red-400"></i>凤凰 (每周一至日)',
+                        headers: ['复存金额', '彩金'],
+                        rows: [['500', '58'], ['1000', '88'], ['3000', '188'], ['5000', '388'], ['10000', '588'], ['30000', '1288'], ['50000', '1588']]
+                    }
+                ],
+                rules: [
+                    '每周期第一笔可以申请，审核通过后 24 小时内添加。',
+                    '彩金流水请依各平台相关规定为准。'
+                ]
+            },
+            {
+                id: 'referral',
+                icon: 'fa-users',
+                title: '介绍活动 (邀请好友)',
+                time: '长期有效',
+                description: '邀请好友注册存款，即送推荐彩金！好友达标再加码送。',
+                tables: [{
+                    title: '',
+                    headers: ['好友首存', '推荐彩金', '七日彩金'],
+                    rows: [
+                        ['500', '88', '108'],
+                        ['1,000', '158', '168'],
+                        ['3,000', '268', '288'],
+                        ['5,000', '388', '488'],
+                        ['10,000', '588', '888'],
+                        ['50,000', '2,088', '3,688'],
+                        ['100,000', '4,088', '6,888']
+                    ]
+                }],
+                rules: [
+                    '好友需加代理联系方式，告知代理推荐人所属平台及账号。',
+                    '好友七日内上线五日 + 复存 1000 以上 + 流水达成(体育不低于3倍、真人不低于5倍)，介绍人再送“七日彩金”。',
+                    '彩金流水三倍 (限体育 / 真人 / 电竞)。'
+                ]
+            },
+            {
+                id: 'first-deposit-extra',
+                icon: 'fa-gift',
+                title: '首存加赠活动',
+                time: '长期有效',
+                description: '首次存款额外加赠高额彩金，助您旗开得胜！',
+                tables: [{
+                    title: '',
+                    headers: ['首存金额', '加赠彩金'],
+                    rows: [
+                        ['500', '50'],
+                        ['1,000', '80'],
+                        ['5,000', '200'],
+                        ['10,000', '300'],
+                        ['30,000', '400'],
+                        ['50,000', '500'],
+                        ['100,000', '600'],
+                        ['200,000', '1,000']
+                    ]
+                }],
+                rules: [
+                    '彩金流水三倍 (限体育 / 真人 / 电竞)。',
+                    '申请资格: 新注册会员。',
+                    '同一手机号、姓名、银行卡、邮箱仅可参加一次。'
+                ]
+            },
+            {
+                id: 'reload-deposit-extra',
+                icon: 'fa-rotate-right',
+                title: '复存加赠 (每周期第一笔)',
+                time: '长期有效',
+                description: '每周期第一笔复存皆可申请额外加赠，审核通过后24小时内添加。',
+                tables: [{
+                    title: '',
+                    headers: ['存款金额', '加赠彩金'],
+                    rows: [
+                        ['500', '30'],
+                        ['1,000', '50'],
+                        ['5,000', '200'],
+                        ['10,000', '300'],
+                        ['30,000', '400'],
+                        ['50,000', '600'],
+                        ['100,000', '800'],
+                        ['300,000', '1,000']
+                    ]
+                }],
+                rules: [
+                    '每周期第一笔可以申请，审核通过后 24 小时内添加。',
+                    '彩金流水三倍 (限体育 / 真人 / 电竞)。'
+                ]
+            },
+            {
+                id: 'monthly-deposit',
+                icon: 'fa-calendar-days',
+                title: '月存活动',
+                time: '长期有效',
+                description: '本月累计存款到达门槛，最高可领 8,888 彩金。',
+                tables: [{
+                    title: '',
+                    headers: ['月总存款', '彩金'],
+                    rows: [
+                        ['10,000+', '108'],
+                        ['50,000+', '288'],
+                        ['100,000+', '388'],
+                        ['200,000+', '888'],
+                        ['500,000+', '3,088'],
+                        ['1,000,000+', '8,888']
+                    ]
+                }],
+                rules: [
+                    '彩金于次月初向代理提出申请。',
+                    '彩金流水6倍 (全馆通用)'
+                ]
+            },
+            {
+                id: 'contact-links',
+                icon: 'fa-link',
+                title: '平台直达与联系方式',
+                time: '24小时为您服务',
+                description: '点击下方链接快速前往各大平台注册体验，或添加我的专属联系方式获取一对一服务！',
+                tables: [],
+                rules: [],
+                customHtml: `
+                    <div class="grid grid-cols-1 gap-4 mt-6">
+                        
+                        <!-- 星空体育 -->
+                        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-amber-500/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xl flex-shrink-0"><i class="fa-solid fa-star"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">星空体育</h4>
+                                    <p class="text-slate-400 text-xs">多线路防失联，随时随地畅玩</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="http://www.xkty152.vip/" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">主线路</a>
+                                <a href="https://www.yh4eth.vip:9971/register/?agent_code=50256605" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用一</a>
+                                <a href="https://www.a1dptb.vip:9971/?agent_code=50256605" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用二</a>
+                            </div>
+                        </div>
+
+                        <!-- 新葡京 (XBJ) -->
+                        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-amber-500/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-full flex items-center justify-center text-xl flex-shrink-0"><i class="fa-solid fa-chess-knight"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">新葡京 (XBJ)</h4>
+                                    <p class="text-slate-400 text-xs">多线路防失联，随时随地畅玩</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="http://ning168.vip" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">主线路</a>
+                                <a href="https://ning168.vip?a=x&c=67239037" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用一</a>
+                                <a href="https://yx0011.cc/?a=x&c=67239037" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用二</a>
+                            </div>
+                        </div>
+                        
+                        <!-- OD -->
+                        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-amber-500/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center text-xl flex-shrink-0"><i class="fa-solid fa-o"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">OD体育</h4>
+                                    <p class="text-slate-400 text-xs">多线路防失联，随时随地畅玩</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="http://www.272odty.com/" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">主线路</a>
+                                <a href="https://www.10avwu.vip:6600/register/?agent_code=1943372" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用一</a>
+                                <a href="https://www.vqxu0w.vip:9149/register/?agent_code=1943372" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用二</a>
+                            </div>
+                        </div>
+                        
+                        <!-- 易倍 -->
+                        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-amber-500/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-xl flex-shrink-0"><i class="fa-solid fa-e"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">OP7 (易倍)</h4>
+                                    <p class="text-slate-400 text-xs">多线路防失联，随时随地畅玩</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="http://3535ss006.vip" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">主线路</a>
+                                <a href="https://www.ogj809.com/g/8p3-ff" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用一</a>
+                                <a href="#" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用二</a>
+                            </div>
+                        </div>
+                        
+                        <!-- 凤凰 -->
+                        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-amber-500/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center text-xl flex-shrink-0"><i class="fa-solid fa-fire"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">凤凰体育</h4>
+                                    <p class="text-slate-400 text-xs">多线路防失联，随时随地畅玩</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://www.fh8963.com:32102/register/?i_code=7330288" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">主线路</a>
+                                <a href="https://www.5fh467.com:31337/?i_code=7330288" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用一</a>
+                                <a href="https://www.6fh846.com:30452/entry/register/?i_code=7330288" target="_blank" class="px-4 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-sm rounded-lg transition-all active:scale-95">备用二</a>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <h3 class="text-xl md:text-2xl font-bold text-white mt-10 mb-4 flex items-center gap-3">
+                        <i class="fa-solid fa-headset text-amber-400"></i> 我的专属联系方式
+                    </h3>
+                    
+                    <!-- 联络卡片区 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- 微信 -->
+                        <div class="bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800 to-slate-900 border border-slate-700 p-4 md:p-6 rounded-2xl shadow-xl flex items-center justify-between gap-4 hover:border-emerald-500/50 transition-colors group">
+                            <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
+                                <div class="w-12 h-12 md:w-14 md:h-14 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-2xl md:text-3xl flex-shrink-0 group-hover:scale-110 transition-transform"><i class="fa-brands fa-weixin"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-slate-400 text-xs md:text-sm">微信 (WeChat)</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="font-bold text-white text-lg md:text-2xl select-all truncate">ning677998</p>
+                                        <button onclick="copyToClipboard('ning677998', this)" class="w-8 h-8 md:w-9 md:h-9 bg-slate-800 rounded-full flex items-center justify-center text-slate-300 hover:text-amber-400 hover:bg-slate-700 transition-colors flex-shrink-0" title="复制微信号"><i class="fa-regular fa-copy text-sm"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 二维码 -->
+                            <div class="flex-shrink-0" title="点击放大/长按识别">
+                                <img src="photo_2026-08-22_19-24-45.jpg" alt="微信二维码" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border border-slate-600 hover:border-emerald-400 transition-all cursor-pointer shadow-md" onclick="window.open('photo_2026-08-22_19-24-45.jpg', '_blank')">
+                            </div>
+                        </div>
+                        
+                        <!-- QQ -->
+                        <div class="bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800 to-slate-900 border border-slate-700 p-4 md:p-6 rounded-2xl shadow-xl flex items-center justify-between gap-4 hover:border-blue-500/50 transition-colors group">
+                            <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
+                                <div class="w-12 h-12 md:w-14 md:h-14 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-2xl md:text-3xl flex-shrink-0 group-hover:scale-110 transition-transform"><i class="fa-brands fa-qq"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-slate-400 text-xs md:text-sm">QQ号</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="font-bold text-white text-lg md:text-2xl select-all truncate">3324547394</p>
+                                        <button onclick="copyToClipboard('3324547394', this)" class="w-8 h-8 md:w-9 md:h-9 bg-slate-800 rounded-full flex items-center justify-center text-slate-300 hover:text-amber-400 hover:bg-slate-700 transition-colors flex-shrink-0" title="复制QQ号"><i class="fa-regular fa-copy text-sm"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 二维码 -->
+                            <div class="flex-shrink-0" title="点击放大/长按识别">
+                                <img src="photo_2026-08-22_19-25-00.jpg" alt="QQ二维码" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border border-slate-600 hover:border-blue-400 transition-all cursor-pointer shadow-md" onclick="window.open('photo_2026-08-22_19-25-00.jpg', '_blank')">
+                            </div>
+                        </div>
+
+                        <!-- UC -->
+                        <div class="bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800 to-slate-900 border border-slate-700 p-4 md:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-orange-500/50 transition-colors group md:col-span-2">
+                            <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
+                                <div class="w-12 h-12 md:w-14 md:h-14 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center text-2xl md:text-3xl flex-shrink-0 group-hover:scale-110 transition-transform"><i class="fa-solid fa-comment-dots"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-slate-400 text-xs md:text-sm">UC 账号</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="font-bold text-white text-lg md:text-2xl select-all truncate">176960215041217</p>
+                                        <button onclick="copyToClipboard('176960215041217', this)" class="w-8 h-8 md:w-9 md:h-9 bg-slate-800 rounded-full flex items-center justify-center text-slate-300 hover:text-amber-400 hover:bg-slate-700 transition-colors flex-shrink-0" title="复制UC账号"><i class="fa-regular fa-copy text-sm"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 self-end md:self-auto">
+                                <a href="http://uc987.com" target="_blank" class="px-3 py-2 md:px-4 md:py-2 bg-slate-800 hover:bg-amber-500 hover:text-slate-900 text-amber-400 font-bold text-xs md:text-sm rounded-lg transition-all active:scale-95 flex items-center gap-2">
+                                    <i class="fa-solid fa-download"></i> 下载 UC
+                                </a>
+                                <!-- 二维码 -->
+                                <div class="flex-shrink-0" title="点击放大/长按识别">
+                                    <img src="photo_2026-08-22_19-25-04.jpg" alt="UC二维码" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border border-slate-600 hover:border-orange-400 transition-all cursor-pointer shadow-md" onclick="window.open('photo_2026-08-22_19-25-04.jpg', '_blank')">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                `
+            }
+        ];
+
+        let currentActiveId = activitiesData[0].id;
+
+        // 渲染导航列
+        function renderNavigation() {
+            const navContainer = document.getElementById('nav-container');
+            navContainer.innerHTML = '';
+
+            activitiesData.forEach(activity => {
+                const isActive = activity.id === currentActiveId;
+                
+                const btn = document.createElement('button');
+                btn.className = `flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-2.5 md:px-4 md:py-3 rounded-xl transition-all duration-300 text-left flex-shrink-0 md:w-full ${
+                    isActive 
+                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-lg shadow-amber-500/5' 
+                    : 'bg-slate-800/50 md:bg-transparent hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-transparent'
+                }`;
+                
+                btn.onclick = () => {
+                    currentActiveId = activity.id;
+                    renderNavigation();
+                    renderContent();
+                    if (window.innerWidth < 768) {
+                        document.getElementById('main-content').scrollTop = 0;
+                        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                };
+
+                btn.innerHTML = `
+                    <div class="flex items-center justify-center ${isActive ? 'text-amber-400' : 'text-slate-500'}">
+                        <i class="fa-solid ${activity.icon}"></i>
+                    </div>
+                    <span class="font-medium text-sm md:text-base whitespace-nowrap md:whitespace-normal md:truncate">${activity.title}</span>
+                    <i class="fa-solid fa-chevron-right text-xs ml-auto hidden md:block ${isActive ? 'opacity-100' : 'opacity-0'}"></i>
+                `;
+                
+                navContainer.appendChild(btn);
+            });
+        }
+
+        // 一键复制功能函数
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400 text-sm"></i>`;
+                btn.classList.add("text-emerald-400");
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove("text-emerald-400");
+                }, 2000);
+            }).catch(err => {
+                alert('复制失败，请手动选择文字复制');
+            });
+        }
+
+        // 渲染主内容区块
+        function renderContent() {
+            const contentContainer = document.getElementById('main-content');
+            const data = activitiesData.find(a => a.id === currentActiveId);
+            
+            // 处理表格 HTML (支援多表格阵列渲染)
+            let tableHtml = '';
+            if (data.tables && data.tables.length > 0) {
+                const tablesContent = data.tables.map(tbl => {
+                    const headers = tbl.headers.map(h => `<th class="p-3 md:p-4 font-semibold text-slate-200">${h}</th>`).join('');
+                    const rows = tbl.rows.map(row => {
+                        const cells = row.map((cell, idx) => {
+                            const isLast = idx === row.length - 1;
+                            return `<td class="p-3 md:p-4 ${isLast ? 'text-amber-400 font-bold' : 'text-slate-300'}">${cell}</td>`;
+                        }).join('');
+                        return `<tr class="hover:bg-slate-800/40 transition-colors border-b border-slate-800/30 last:border-0">${cells}</tr>`;
+                    }).join('');
+
+                    return `
+                        <div class="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden backdrop-blur-sm shadow-xl flex-1 min-w-[100%] xl:min-w-[48%]">
+                            ${tbl.title ? `<div class="bg-slate-800/80 p-3 md:p-4 text-center md:text-left font-bold text-amber-400 border-b border-slate-700">${tbl.title}</div>` : ''}
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-center md:text-left border-collapse text-sm md:text-base whitespace-nowrap md:whitespace-normal">
+                                    <thead>
+                                        <tr class="bg-slate-800/50 border-b border-slate-700">${headers}</tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/50">${rows}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                tableHtml = `<div class="flex flex-wrap gap-6 mt-8">${tablesContent}</div>`;
+            }
+
+            // 处理规则 HTML
+            let rulesBlockHtml = '';
+            if (data.rules && data.rules.length > 0) {
+                const rulesHtml = data.rules.map(rule => `
+                    <li class="flex items-start gap-3 text-slate-300 leading-relaxed text-sm md:text-base">
+                        <span class="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-500 mt-2"></span>
+                        <span>${rule}</span>
+                    </li>
+                `).join('');
+
+                rulesBlockHtml = `
+                    <div class="bg-slate-900/40 rounded-2xl border border-slate-800 p-5 md:p-8 mt-8 relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2 relative z-10">
+                            <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                            活动规则与条款
+                        </h3>
+                        <ul class="space-y-3 md:space-y-4 relative z-10">
+                            ${rulesHtml}
+                            <li class="flex items-start gap-3 text-slate-500 text-xs md:text-sm mt-6 pt-6 border-t border-slate-800/50">
+                                <span class="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-slate-700 mt-1.5"></span>
+                                <span>全站通用规则：同一手机号、姓名、银行卡、邮箱地址仅可参加一次，若有违规不得申请，套利、对刷或不诚实获取盈利行为，将取消优惠资格，本平台保留活动最终解释权。</span>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // 处理客制化 HTML (新增连结卡片页面使用)
+            let customContentHtml = data.customHtml ? data.customHtml : '';
+
+            // 版面放大至 max-w-6xl 
+            contentContainer.innerHTML = `
+                <div class="max-w-6xl mx-auto space-y-6 md:space-y-8 fade-in pb-10">
+                    <header class="space-y-3 md:space-y-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs md:text-sm text-slate-300 shadow-inner">
+                            <i class="fa-regular fa-calendar text-amber-500"></i>
+                            活动时间：${data.time}
+                        </div>
+                        <h2 class="text-2xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 leading-tight">
+                            ${data.title}
+                        </h2>
+                        <p class="text-base md:text-lg text-amber-400/90 font-medium">
+                            ${data.description}
+                        </p>
+                    </header>
+
+                    ${tableHtml}
+                    ${rulesBlockHtml}
+                    ${customContentHtml}
+                </div>
+            `;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderNavigation();
+            renderContent();
+        });
+
+    </script>
+</body>
+</html>
