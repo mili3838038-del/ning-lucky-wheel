@@ -23,10 +23,10 @@ let prizeIndex = 0;
 let prizeName = "8元";
 
 // 機率由極小到大排列，確保數學邏輯絕對正確
-if (rand < 0.000001) { prizeIndex = 7; prizeName = "iphone 18 duo 512G"; } // 0.0001%
-else if (rand < 0.000002) { prizeIndex = 6; prizeName = "AirPods 5"; } // 0.0001%
-else if (rand < 0.000003) { prizeIndex = 5; prizeName = "8888元"; } // 0.0001%
-else if (rand < 0.000004) { prizeIndex = 4; prizeName = "888元"; } // 0.0001%
+// if (rand < 0.000001) { prizeIndex = 7; prizeName = "iphone 18 duo 512G"; } // 0.0001%
+// else if (rand < 0.000002) { prizeIndex = 6; prizeName = "AirPods 5"; } // 0.0001%
+// else if (rand < 0.000003) { prizeIndex = 5; prizeName = "8888元"; } // 0.0001%
+if (rand < 0.000004) { prizeIndex = 4; prizeName = "888元"; } // 0.0001%
 else if (rand < 0.010004) { prizeIndex = 3; prizeName = "188元"; } // 1%
 else if (rand < 0.060004) { prizeIndex = 2; prizeName = "88元"; } // 5%
 else if (rand < 0.210004) { prizeIndex = 1; prizeName = "38元"; } // 15%
