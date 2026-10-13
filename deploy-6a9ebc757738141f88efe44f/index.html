@@ -147,19 +147,28 @@
             {
                 id: 'lucky-wheel',
                 icon: 'fa-dharmachakra',
-                title: '每日幸运大转盘',
+                title: '每日幸运大转盘 <span style="font-size: 12px; color: #ef4444; margin-left: 4px;">(已结束)</span>',
                 time: '即日起-10/11中秋国庆特别活动',
                 description: '每日存款金额 ≥ 500 且当日流水 ≥ 1000 的老会员，私聊代理获取专属抽奖码，即可参与转盘抽大奖！',
                 tables: [],
                 rules: [
-                    '每日存款金额 ≥ 500 且当日流水 ≥ 1000 的会员可获得1次抽奖资格。',
-                    '满足条件后，请向代理索取“今日专属抽奖码”。',
-                    '奖项包含：8元、38元、88元、188元、888元、8888元、AirPods 5、iphone 18 duo 512G。',
-                    '【防作弊声明】抽奖结果由系统加密生成唯一锁定结果，并即时同步至代理后台，请勿伪造截图。',
-                    '中奖后请立即截图完整画面并发送给代理申请派发彩金。'
+                    // 轉盤活動已結束，暫時將規則註解隱藏
+                    // '每日存款金额 ≥ 500 且当日流水 ≥ 1000 的会员可获得1次抽奖资格。',
+                    // '满足条件后，请向代理索取“今日专属抽奖码”。',
+                    // '奖项包含：8元、38元、88元、188元、888元、8888元、AirPods 5、iphone 18 duo 512G。',
+                    // '【防作弊声明】抽奖结果由系统加密生成唯一锁定结果，并即时同步至代理后台，请勿伪造截图。',
+                    // '中奖后请立即截图完整画面并发送给代理申请派发彩金。'
                 ],
                 customHtml: `
-                    <div class="bg-slate-900/80 border border-slate-800 p-6 md:p-10 rounded-2xl shadow-xl mt-6 relative overflow-hidden flex flex-col lg:flex-row items-center justify-center gap-10">
+                    <!-- 活动结束公告提示 -->
+                    <div class="flex flex-col items-center justify-center w-full py-20 text-white bg-slate-900/40 rounded-2xl border border-slate-800 mt-8 shadow-xl">
+                        <i class="fa-solid fa-box-open text-6xl text-slate-700 mb-6"></i>
+                        <h2 class="text-2xl md:text-3xl font-bold mb-4 text-amber-500 text-center">本期专属抽奖活动已圆满结束</h2>
+                        <p class="text-slate-400 text-center px-4">感谢您的参与！请点击左侧菜单查看其他最新的平台常规彩金与加赠活动。</p>
+                    </div>
+
+                    <!-- 原本的抽奖转盘与输入区 (使用 display: none 隐藏，保留代码方便未来重启) -->
+                    <div style="display: none;" class="bg-slate-900/80 border border-slate-800 p-6 md:p-10 rounded-2xl shadow-xl mt-6 relative overflow-hidden flex flex-col lg:flex-row items-center justify-center gap-10">
                         <!-- 抽奖转盘 -->
                         <div class="relative w-[300px] h-[300px] md:w-[420px] md:h-[420px] lg:w-[460px] lg:h-[460px] flex-shrink-0 mt-4 lg:mt-0 mx-auto">
                             <!-- 指针 -->
